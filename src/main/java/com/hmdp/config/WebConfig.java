@@ -27,8 +27,10 @@ public class WebConfig implements WebMvcConfigurer {
                 "/upload/**",
                 "/blog/hot",
                 "/user/code",
-                "/user/login"
-        ).order(1);;
+                "/user/login",
+                // 测试方法中should_return_400_if_param_not_valid()的路径会被拦截，可以在这里把这个路径排除在拦截路径中
+                "/api/**"
+        ).order(1);
 
         registry.addInterceptor(new RefreshTokenInterceptor(stringRedisTemplate))
                 .addPathPatterns("/**").order(0);

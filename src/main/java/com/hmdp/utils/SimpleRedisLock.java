@@ -36,16 +36,18 @@ public class SimpleRedisLock implements ILock{
 
     @Override
     public boolean tryLock(long timeoutSec) {
-        //获取线程标识
+        //获取线程标识，即加锁时的唯一值
         String  threadId = ID_PREFIX + Thread.currentThread().getId();
 
         Boolean success = stringRedisTemplate.opsForValue()
                 .setIfAbsent(KEY_PREFIX + name, threadId, timeoutSec, TimeUnit.SECONDS);
-        return Boolean.TRUE.equals(success);
+        return Boolean.TRUE.equals(success);//，如果你知道 success 永远不会为 null，并且你更喜欢更简洁的代码，
+        // 那么使用 success == true 或 success（因为 if (success) 就足够了）也是可以的。
+        // 但在处理可能为 null 的值时，使用 Boolean.TRUE.equals(success) 会更安全。
     }
     @Override
     public void unlock() {
-        //调用lua脚本
+        //调用lua脚本，在脚本中执行，满足原子性的
         stringRedisTemplate.execute(
                 UNLOCK_SCRIPT,
                 Collections.singletonList(KEY_PREFIX + name), //锁的key,获取锁的标识

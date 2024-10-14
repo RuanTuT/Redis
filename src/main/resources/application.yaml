@@ -1,5 +1,5 @@
-server:
-  port: 8080
+#server:
+ # port: 8080
 spring:
   application:
     name: hmdp
@@ -11,9 +11,11 @@ spring:
     password: ry185711
     #password: root
   redis:
-    #host: localhost
-    host: 59.110.16.223
-    port: 6379
+    host: localhost
+#    cluster:
+#      nodes: 59.110.16.223:6379,59.110.16.223:6380,59.110.16.223:6381
+    #host: 59.110.16.223
+    port: 6380
     password: redis@123
    # password: wang
     lettuce:
@@ -29,5 +31,8 @@ mybatis-plus:
 logging:
   level:
     com.hmdp: debug
+#    org:
+#      springframework:
+#        security:DEBUG:
   pattern:
     dateformat: mm:ss.SSS

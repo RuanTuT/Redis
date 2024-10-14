@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.aop.framework.AopContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -54,8 +55,12 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private RedissonClient redissonClient;
 
 
-    //加载lua脚本
+
+    //加载lua脚本，当类被加载到JVM时，静态初始化块会被执行一次，且仅执行一次。
+    // 这个DefaultRedisScript对象在类被加载到JVM时就被初始化，并且之后不能被重新赋值。
     private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
+    //这是一个静态初始化块，它在类被加载到 JVM 时执行，并且只会执行一次。
+    // 在静态初始化块中，我们可以进行静态变量的初始化等操作。
     static {
         SECKILL_SCRIPT = new DefaultRedisScript<>();
         SECKILL_SCRIPT.setLocation(new ClassPathResource("seckill.lua"));
@@ -178,7 +183,9 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             lock.unlock();
         }
     }
-    //代理对象
+
+    @Autowired
+    //其中一种获取代理对象的方法，注入自身的代理对象，从而调用加了事务注解的方法
     private IVoucherOrderService proxy;
 
     // 基于Redis的Stream结构作为消息队列，实现异步秒杀下单
@@ -268,7 +275,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             return Result.fail("库存不足！");
         }
         //4.库存充足
-        Long userId = UserHolder.getUser().getId();
+        //Long userId = UserHolder.getUser().getId();
         //控制 锁粒度  intern() 这个方法是从常量池中拿到数据，
         // 如果我们直接使用userId.toString() 他拿到的对象实际上是不同的对象，new出来的对象，
         // 我们使用锁必须保证锁必须是同一把，所以我们需要使用intern()方法
@@ -306,7 +313,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                 log.error("你已经下过单了！");
                 return;
             }
-            // 订单不存在  扣减库存
+            //乐观锁解决超卖问题
+            // 订单不存在  扣减库存。
             boolean success = seckillVoucherService
                     .update()
                     .setSql("stock = stock - 1 ")

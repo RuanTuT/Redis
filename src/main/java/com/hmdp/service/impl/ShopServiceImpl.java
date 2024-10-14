@@ -35,7 +35,8 @@ import static com.hmdp.utils.RedisConstants.*;
 @Service
 public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IShopService {
 
-    @Resource
+    @Resource//它来自 javax.annotation 包  而 @Autowired（Spring 特有），由 Spring 框架提供。
+    //@Resource默认按名称进行自动装配，如果找不到与指定名称匹配的bean，则按类型进行自动装配。
     private RedisClient redisClient;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -68,7 +69,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         //1.先查询缓存
         String key = CACHE_SHOP_KEY + id;
         String shopJson = stringRedisTemplate.opsForValue().get(key);
-        //2.判断redis中是否存在
+        //2.判断redis中是否存在，redis中没有，数据库里肯定没有，因为过期的数据不会自动清除
         if (StrUtil.isBlank(shopJson)){
             //3.redis中不存在  未命中
             return null;
@@ -175,14 +176,14 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             Shop shop = JSONUtil.toBean(shopJson, Shop.class);
             return shop;
         }
-        //3.1 缓存中 命中的是“” 空值 即该数据是缓存穿透数据  不走数据库
+        //3.1 缓存中 命中的是“” 空值（空对象）， 即该数据是缓存穿透数据  不走数据库
         if (shopJson != null){
             return null;
         }
         //4.redis中不存在, 未命中 在数据库中查询
         Shop shop = getById(id);
         if (shop == null){
-            //不存在则缓存一个空对象，解决缓存穿透
+            //不存在则缓存一个空对象，解决缓存穿透，空对象指的是“”
             stringRedisTemplate.opsForValue().set(key,"",CACHE_NULL_TTL,TimeUnit.MINUTES);
             return null;
         }

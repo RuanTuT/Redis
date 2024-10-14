@@ -39,10 +39,11 @@ public class RedisIdWorker {
         // 2.生成序列号
         // 2.1.获取当前日期，精确到天
         String date = now.format(DateTimeFormatter.ofPattern("yyyy:MM:dd"));
-        // 2.2.自增长
+        // 2.2.自增长，如果Redis中没有这个键，那么increment方法会创建一个新的键，并将其值设置为1（因为自增了0）。如果键已经存在，那么它的值会增加1。
+        //increment("someKey", 5)会将键someKey的值增加5。
         long count = stringRedisTemplate.opsForValue().increment("icr:" + keyPrefix + ":" + date);
 
-        // 3.拼接并返回
+        // 3.拼接并返回，合并结果：最终的结果是一个整数，它同时包含了原始的 timestamp（左移后）和 count 的信息。左移 加 按位或
         return timestamp << COUNT_BITS | count;
     }
 }

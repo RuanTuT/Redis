@@ -33,6 +33,7 @@ public class RedisClient {
     private static final ExecutorService CACHE_REBUILD_EXECUTOR = Executors.newFixedThreadPool(10);
     private StringRedisTemplate stringRedisTemplate;
 
+    //依赖注入时会自动创建实例，调用实参构造
     public RedisClient(StringRedisTemplate stringRedisTemplate) {
         this.stringRedisTemplate = stringRedisTemplate;
     }
@@ -49,6 +50,7 @@ public class RedisClient {
         redisData.setExpireTime(LocalDateTime.now().plusSeconds(unit.toSeconds(time)));
 //        写入redis
         stringRedisTemplate.opsForValue().set(key,JSONUtil.toJsonStr(redisData));
+
     }
 
     //根据指定的key查询缓存，并反序列化为指定类型，利用缓存空值的方式解决缓存穿透问题
@@ -103,7 +105,7 @@ public class RedisClient {
         //过期了
         //6.缓存重建 先获取锁
         String lockKey = LOCK_SHOP_KEY + id;
-        boolean flag = tryLock(lockKey);
+        boolean flag = tryLock(lockKey);//如果键不存在，返回true，设置键的值，如果存在，则返回false
         if (flag){
             //7.获取到锁，开启独立线程 查询数据库 并写入redis 设置过期时间
 

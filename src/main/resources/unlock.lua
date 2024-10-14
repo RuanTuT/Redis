@@ -6,6 +6,8 @@
 
 -- 这里的 KEYS[1] 就是锁的key，这里的ARGV[1] 就是当前线程标示
 -- 获取锁中的标示，判断是否与当前线程标示一致
+--KEYS[1] 指的是传递给脚本的第一个键（key）。即stringRedisTemplate.execute中的Collections.singletonList(KEY_PREFIX + name)
+--ARGV[1]是传递给脚本的第一个参数，即ID_PREFIX + Thread.currentThread().getId()，序号都是从1开始的
 if (redis.call('GET', KEYS[1]) == ARGV[1]) then
     -- 一致，则删除锁
     return redis.call('DEL', KEYS[1])
