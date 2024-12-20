@@ -35,9 +35,11 @@ public class BlogController {
         return blogService.saveBlog(blog);
     }
 
+
+    //给指定blog点赞
     @PutMapping("/like/{id}")
     public Result likeBlog(@PathVariable("id") Long id) {
-        // 修改点赞数量
+        // 点赞，若是之前点过赞了就相当于取消点赞，修改数据库以及删除redis中的数据
         return blogService.likeBlog(id);
     }
 
@@ -55,6 +57,7 @@ public class BlogController {
 
     @GetMapping("/hot")
     public Result queryHotBlog(@RequestParam(value = "current", defaultValue = "1") Integer current) {
+        //在首页按照点赞数多少展示blog
         return blogService.queryHotBlog(current);
     }
 
@@ -68,6 +71,7 @@ public class BlogController {
     //点赞列表查询
     @GetMapping("/likes/{blogId}")
     public Result queryBlogLikes(@PathVariable String blogId){
+        //查询top5中的点赞用户，并将点赞用户返回
         return blogService.queryBlogLikes(blogId);
     }
 
@@ -87,9 +91,10 @@ public class BlogController {
      * @return  com.hmdp.dto.Result
     */
     @GetMapping("/of/follow")
-    public Result queryBlogOfFollow(@RequestParam("lastId") Long max,
-                                    @RequestParam(value = "offset", defaultValue = "0") Integer offset){
-
+    public Result queryBlogOfFollow(@RequestParam("lastId") Long max,//就是minTime
+                                    @RequestParam(value = "offset", defaultValue = "0") Integer offset){//就是os
+    //这里lastId的作用，表示从zset中读取的数据的范围时0-lastid之间，读取时先从最新的blog读取也就是最大的值开始读，保存最后结束的读取点，下次从0-这个读取点之间再次从大到小读，记住要跳过offset个blog往后读取
+        //如果这段时间有新的blog产生，那就刷新页面，否则读取不到新的blog，刷新后就从头开始读取，即0-默认的lastid（最新的时间戳）
 
         return blogService.queryBlogFollow(max,offset);
     }

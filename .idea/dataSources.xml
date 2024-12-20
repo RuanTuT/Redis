@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="@59.110.16.223" uuid="699360c9-0f39-42ea-b151-98b6349301ca">
+    <data-source source="LOCAL" name="@39.106.70.185" uuid="9c09d172-a6bc-4a22-8211-c40fb3f8ce35">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
+      <imported>true</imported>
+      <remarks>$PROJECT_DIR$/src/main/resources/application.yaml</remarks>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://59.110.16.223:3306</jdbc-url>
+      <jdbc-url>jdbc:mysql://39.106.70.185:3306/</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.host.port" />
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
@@ -14,13 +16,11 @@
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="db1@59.110.16.223" uuid="bada7aa8-91c3-49d1-b327-2b554efb9471">
+    <data-source source="LOCAL" name="@localhost" uuid="fdf9a736-7c4b-4cbf-a1af-8c20fef9e569">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
-      <imported>true</imported>
-      <remarks>$PROJECT_DIR$/src/main/resources/application.yaml</remarks>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://59.110.16.223:3306/db1</jdbc-url>
+      <jdbc-url>jdbc:mysql://localhost:3306/</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.host.port" />
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />

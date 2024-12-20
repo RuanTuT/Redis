@@ -19,11 +19,15 @@ public class UploadController {
 
     @PostMapping("blog")
     public Result uploadImage(@RequestParam("file") MultipartFile image) {
+        //@RequestParam 是处理文件上传的常用方式，因为上传的文件通常是表单数据（multipart/form-data）。
+        //@RequestBody 不适合文件上传，主要用于 JSON 格式的请求体。若需要上传文件和 JSON，可以结合 @RequestPart 和 @RequestParam。
+        //multipart/form-data一种支持文件上传的格式，常用于包含文件和字段的表单提交。application/x-www-form-urlencoded表单数据被编码为键值对的形式（类似查询字符串）。
         try {
             // 获取原始文件名称
             String originalFilename = image.getOriginalFilename();
             // 生成新文件名
             String fileName = createNewFileName(originalFilename);
+            log.info("命名成功");
             // 保存文件
             image.transferTo(new File(SystemConstants.IMAGE_UPLOAD_DIR, fileName));
             // 返回结果
@@ -36,11 +40,26 @@ public class UploadController {
 
     @GetMapping("/blog/delete")
     public Result deleteBlogImg(@RequestParam("name") String filename) {
-        File file = new File(SystemConstants.IMAGE_UPLOAD_DIR, filename);
+        // 创建文件对象
+        File file = new File(SystemConstants.IMAGE_UPLOAD_DIR, filename.substring(5));
+
+        // 检查是否为目录
         if (file.isDirectory()) {
             return Result.fail("错误的文件名称");
         }
-        FileUtil.del(file);
+
+        // 检查文件是否存在
+        if (!file.exists()) {
+            return Result.fail("文件不存在，无法删除"+file.toPath()+file.getName());
+        }
+
+
+        // 尝试删除文件并捕获删除结果
+        boolean deleted = FileUtil.del(file);
+        if (!deleted) {
+            return Result.fail("文件删除失败");
+        }
+
         return Result.ok();
     }
 

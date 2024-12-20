@@ -14,6 +14,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IVoucherService extends IService<Voucher> {
 
+    Voucher testSeckillVoucher(Long voucherId);
+
     Result queryVoucherOfShop(Long shopId);
 
     void addSeckillVoucher(Voucher voucher);

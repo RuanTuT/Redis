@@ -57,7 +57,7 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
         //使用steam流 将bean集合转为string集合
         List<String> shopTypeList = shopTypes.stream()
                 .sorted(Comparator.comparingInt(ShopType::getSort))
-                .map(JSONUtil::toJsonStr)
+                .map(JSONUtil::toJsonStr)//JSONUtil::toJsonStr是方法引用,代表的是一个函数或方法
                 .collect(Collectors.toList());
 
         //存在商户类型，写入redis

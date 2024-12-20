@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
  * @Description TODO  利用redis构建一个分布式锁
  * @Date 2023/5/9 10:36
  */
+//SimpleRedisLock lock = new SimpleRedisLock("order:" + userId, stringRedisTemplate);
 public class SimpleRedisLock implements ILock{
 
     private String name;  //锁的名称
@@ -51,7 +52,7 @@ public class SimpleRedisLock implements ILock{
         stringRedisTemplate.execute(
                 UNLOCK_SCRIPT,
                 Collections.singletonList(KEY_PREFIX + name), //锁的key,获取锁的标识
-                ID_PREFIX + Thread.currentThread().getId()
+                ID_PREFIX + Thread.currentThread().getId()//判断锁的键KEY_PREFIX + name对应的值是否等于Thread.currentThread().getId()
         );
         //经过以上代码改造后，我们就能够实现 拿锁比锁删锁的原子性动作了~
     }

@@ -53,7 +53,7 @@ public class Blog implements Serializable {
     /**
      * 是否点赞过了
      */
-    @TableField(exist = false)
+    @TableField(exist = false)//这个属性不在数据库中，调用某个函数能给这个属性赋值，用来判断某个blog是否被自己点赞了！！！
     private Boolean isLike;
 
     /**

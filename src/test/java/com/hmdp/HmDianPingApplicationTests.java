@@ -1,7 +1,12 @@
 package com.hmdp;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.hmdp.entity.SeckillVoucher;
 import com.hmdp.entity.Shop;
+import com.hmdp.entity.Voucher;
+import com.hmdp.entity.VoucherOrder;
 import com.hmdp.service.impl.ShopServiceImpl;
+import com.hmdp.service.impl.VoucherServiceImpl;
 import com.hmdp.utils.RedisIdWorker;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RLock;
@@ -11,14 +16,18 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands;
+import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 
 import javax.annotation.Resource;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,12 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class HmDianPingApplicationTests {
     @Autowired
     MockMvc mockMvc;
-    @Test
-    void should_return_400_if_param_not_valid() throws Exception {
-        mockMvc.perform(get("/api/illegalArgumentException"))
-                .andExpect(status().is(400))
-                .andExpect( jsonPath("$.message").value("参数错误!"));
-    }
+
 
 
     @Resource
@@ -56,19 +60,56 @@ class HmDianPingApplicationTests {
     @Resource
     private RedissonClient redissonClient;
 
+    @Resource
+    private VoucherServiceImpl voucherService;
 
-
+    @Test
+    void should_return_400_if_param_not_valid() throws Exception {
+        mockMvc.perform(get("/api/illegalArgumentException"))
+                .andExpect(status().is(400))
+                .andExpect( jsonPath("$.message").value("参数错误!"));
+    }
     /*@Test
     public void testSaveShop() {
         service.rebuildShopCache(1L,20L);
     }*/
+    @Test
+    void testStream(){
+        List<MapRecord<String, Object, Object>> list = stringRedisTemplate.opsForStream().read(
+                Consumer.from("g1", "c1"),//Redis 在 Pending List 中记录每条消息的状态，包括：消息 ID。分配的消费者（如 c1）。
+                StreamReadOptions.empty().count(1).block(Duration.ofSeconds(2)),
+                StreamOffset.create("stream.orders", ReadOffset.lastConsumed())//从存储的位点继续读取!!!
+        );
+        // 2.判断订单信息是否为空
+        if (list == null || list.isEmpty()) {
+            System.out.println("没有消息");
+            return;
+        }
+        // 解析数据  record<String,Map<Object,Object>> getvalue就是获得Map
+        //消息Id直接附属于 MapRecord 对象，用来标识这条消息,通过getId获得.
+        MapRecord<String, Object, Object> record = list.get(0);//获得第一条消息
+         //4.确认消息 XACK,Redis 的消息确认 (acknowledge) 是基于 消费组 的，而不是具体的消费者。
+        System.out.println(stringRedisTemplate.opsForStream().acknowledge(Objects.requireNonNull(record.getStream()), "g1", record.getId()));
+    }
+    @Test
+    void testaddSeckillVoucher() throws Exception {
+//        Voucher voucher = new Voucher();
+//        voucher.setId(20L);
+//        Voucher voucher=voucherService.testSeckillVoucher(1L);
+//        voucher.setStock(3);
+//        LocalDateTime BeginTime = LocalDateTime.of(2024,11,25,00,00,00);
+//        LocalDateTime EndTime = LocalDateTime.of(2024,11,25,23,59,59);
+//        voucher.setBeginTime(BeginTime);
+//        voucher.setEndTime(EndTime);
+//        voucherService.addSeckillVoucher(voucher);
 
+    }
     @Test
     void testIdWorker() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(300);
         ExecutorService es= Executors.newFixedThreadPool(300);
         Runnable task = () -> {
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 10; i++) {
                 long id = redisIdWorker.nextId("order");
                 System.out.println("id = " + id);
             }
@@ -140,6 +181,7 @@ class HmDianPingApplicationTests {
             List<Shop> shopList = mapEntry.getValue();
             List<RedisGeoCommands.GeoLocation<String>> locations = new ArrayList<>();
             // 3.3.写入redis GEOADD key 经度 纬度 member
+            //Redis 使用 GeoHash 将经纬度转换为 52 位的整数，作为 Sorted Set 中的 score。
             for (Shop shop : shopList) {
                 locations.add(new RedisGeoCommands.GeoLocation<>(
                         shop.getId().toString(),   //member
@@ -154,6 +196,10 @@ class HmDianPingApplicationTests {
 //    UV统计-测试百万数据的统计
 
 //    向HyperLogLog中添加100万条数据
+    //HyperLogLog 是一种用于基数估计的数据结构，它可以在非常小的内存空间内估计集合中不重复元素的数量。
+    //HyperLogLog 的数据存储格式是二进制的，但可以通过 Redis 命令将其转换为十六进制（hex）字符串进行查看和传输。
+    //HyperLogLog 在 Redis 内部是以二进制格式存储的。它使用一个固定大小的数组来存储数据，这个数组的大小通常是 12k 字节
+    //这个估算的基数并不一定准确，是一个带有 0.81% 标准错误的近似值（对于可以接受一定容错的业务场景，比如IP数统计，UV等，是可以忽略不计的）。
     @Test
     void addDataTest() {
         String[] user = new String[1000];

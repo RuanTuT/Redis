@@ -82,7 +82,7 @@ public class RedisClient {
     }
 
 
-    //根据指定的key查询缓存，并反序列化为指定类型，需要利用逻辑过期解决缓存击穿问题
+    //根据指定的key查询缓存，并反序列化为指定类型，需要利用逻辑过期解决缓存击穿问题，逻辑过期是对redis中的数据不设置过期时间，但是会在数据中保存过期时间，在从redis中取出数据后判断满足过期时间后就从redis中删除
     public <R,ID> R queryWithLogicalExpire(
             String keyPrefix, ID id, Class<R> type, Function<ID,R> dbFallBack, Long time,TimeUnit unit){
         //1.先查询缓存
@@ -136,7 +136,7 @@ public class RedisClient {
     }
 
 
-    //根据指定的key查询缓存，并反序列化为指定类型，需要利用互斥锁解决缓存击穿问题
+    //根据指定的key查询缓存，并反序列化为指定类型，需要利用互斥锁解决缓存击穿问题，互斥锁只允许一个线程去重建缓存
     public <R, ID> R queryWithMutex(String keyPrefix, ID id, Class<R> type, Function<ID,R> dbFallBack,Long time, TimeUnit unit){
         //1.先查询缓存
         String key = keyPrefix + id;
@@ -193,7 +193,7 @@ public class RedisClient {
 
 
 
-    //获取锁  利用redis的setnx方法来表示获取锁
+    //获取锁  利用redis的setnx方法来表示获取锁,乐观锁
     private boolean tryLock(String key){
         Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(key, "1", 10, TimeUnit.SECONDS);
         return BooleanUtil.isTrue(flag);  //将包装类 转为基本类 防止空指针！！！

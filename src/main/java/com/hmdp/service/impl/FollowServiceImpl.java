@@ -51,6 +51,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
             follow.setFollowUserId(followId);
             boolean isSuccess = save(follow);
             if (isSuccess){
+                //redis保存每个用户的所关注的用户都是谁
                 stringRedisTemplate.opsForSet().add(key, followId.toString());
             }
         }else {
@@ -64,7 +65,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
         }
         return Result.ok();
     }
-    //判断是否 关注
+    //判断是否自己是否关注blog owner
     @Override
     public Result isFollow(String id) {
         //获取当前用户

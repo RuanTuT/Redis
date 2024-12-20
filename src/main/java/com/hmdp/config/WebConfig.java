@@ -14,7 +14,7 @@ import javax.annotation.Resource;
  * @Description TODO
  * @Date 2023/5/6 16:39
  */
-@Configuration
+@Configuration//主要用于定义配置类。被 @Configuration 注解标记的类相当于一个 XML 配置文件
 public class WebConfig implements WebMvcConfigurer {
     @Resource
     private StringRedisTemplate stringRedisTemplate;

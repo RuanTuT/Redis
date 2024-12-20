@@ -8,9 +8,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @Slf4j
-@RestControllerAdvice//全局异常处理
+@RestControllerAdvice//全局异常处理，@ControllerAdvice 是Spring MVC提供的一个全局控制器增强机制
 public class WebExceptionAdvice {
-
 //    @ExceptionHandler(RuntimeException.class)
 //    public Result handleRuntimeException(RuntimeException e) {
 //        log.error(e.toString(), e);

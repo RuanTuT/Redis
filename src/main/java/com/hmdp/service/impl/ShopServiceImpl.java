@@ -46,11 +46,12 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     public Result queryShopById(Long id) {
         //缓存击穿
 //        Shop shop = queryWithPassThrough(id);
-        //利用互斥锁 解决缓存穿透
+        //利用互斥锁 解决缓存击穿
 //        Shop shop = queryWithMutex(id);
-        //利用逻辑删除 解决缓存穿透
+        //利用逻辑删除 解决缓存击穿
 //        Shop shop = queryWithLogicalExpire(id);
 
+        //RedisClient包含了一系列解决缓存穿透和缓存击穿的方法!!!
         //利用封装好的工具类
         Shop shop = redisClient.queryWithPassThrough(
                 CACHE_SHOP_KEY, id, Shop.class, this::getById, CACHE_SHOP_TTL, TimeUnit.MINUTES);
@@ -63,7 +64,8 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         return Result.ok(shop) ;
     }
 /*
-
+ //逻辑过期解决缓存击穿:把过期时间设置在 redis的value中，注意：这个过期时间并不会直接作用于redis，而是我们后续通过逻辑去处理。
+ //线程读取过程中不需要等待，性能好，有一个额外的线程持有锁去进行重构数据，但是在重构数据完成前，其他的线程只能返回之前的数据，且实现起来麻烦
     private static final ExecutorService CACHE_REBUILD_EXECUTOR = Executors.newFixedThreadPool(10);
     private Shop queryWithLogicalExpire(Long id) {
         //1.先查询缓存
@@ -76,7 +78,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         }
 
         //4.redis存在, 命中 ,需要先将json序列化为java对象
-        RedisData data = JSONUtil.toBean(shopJson, RedisData.class);
+        RedisData data = JSONUtil.toBean(shopJson, RedisData.class);//RedisDate是一种数据的封装,是为了把过期时间设置在 redis的value
         LocalDateTime expireTime = data.getExpireTime();
         Shop shop = JSONUtil.toBean((JSONObject) data.getData(), Shop.class);
         //5.判断缓存是否过期
@@ -106,7 +108,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         return shop; //脏数据
     }
 
-    //利用互斥锁解决缓存穿透
+    //利用互斥锁解决缓存击穿
     private Shop queryWithMutex(Long id) {
         //1.先查询缓存
         String key = CACHE_SHOP_KEY + id;
@@ -311,7 +313,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             int end = current * SystemConstants.DEFAULT_PAGE_SIZE;
 
             // 3.查询redis、按照距离排序、分页。结果：shopId、distance
-            String key = SHOP_GEO_KEY + typeId;
+            String key = SHOP_GEO_KEY + typeId;//每次只查询特定shoptype的RedisGeoCommands.GeoLocation<String>
             GeoResults<RedisGeoCommands.GeoLocation<String>> results = stringRedisTemplate.opsForGeo() // GEOSEARCH key BYLONLAT x y BYRADIUS 10 WITHDISTANCE
                     .search(
                             key,
@@ -323,7 +325,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             if (results == null) {
                 return Result.ok(Collections.emptyList());
             }
-            List<GeoResult<RedisGeoCommands.GeoLocation<String>>> list = results.getContent();
+            List<GeoResult<RedisGeoCommands.GeoLocation<String>>> list = results.getContent();//getContent的作用是从GeoResults变为List<GeoResult>
             if (list.size() <= from) {
                 // 没有下一页了，结束
                 return Result.ok(Collections.emptyList());
@@ -340,6 +342,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
                 distanceMap.put(shopIdStr, distance);
             });
             // 5.根据id查询Shop
+        //要获取的是店铺的详细信息，这里获得的result只有距离，shopid，所以还要根据id从数据库读取shop的详细信息，并将distance填入，因为distance这个字段在数据库中不存在，需要手动填入
             String idStr = StrUtil.join(",", ids);
             List<Shop> shops = query().in("id", ids).last("ORDER BY FIELD(id," + idStr + ")").list();
             for (Shop shop : shops) {
