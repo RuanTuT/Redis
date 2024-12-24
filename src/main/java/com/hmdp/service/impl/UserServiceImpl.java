@@ -12,6 +12,7 @@ import com.hmdp.entity.User;
 import com.hmdp.mapper.UserMapper;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.RegexUtils;
+import com.hmdp.utils.SmsService;
 import com.hmdp.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.BitFieldSubCommands;
@@ -45,7 +46,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     private StringRedisTemplate stringRedisTemplate;
     //发送验证码
     @Override
-    public Result sendCode(String phone, HttpSession session) {
+    public Result sendCode(String phone, HttpSession session) throws Exception {
         //1. 校验手机号
         if(RegexUtils.isPhoneInvalid(phone)){
             //2.无效手机号
@@ -59,6 +60,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         stringRedisTemplate.opsForValue().set(LOGIN_CODE_KEY + phone,code,5L,TimeUnit.MINUTES);
         //5，发送验证码
         log.debug("发送短信验证码成功，验证码：{}",code);
+
+            SmsService.sendSms(phone,code);
 
         return Result.ok();
     }
@@ -118,7 +121,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         stringRedisTemplate.opsForHash().putAll(tokenKey,userMap);
         //5.4设置token有效期
         stringRedisTemplate.expire(tokenKey,LOGIN_USER_TTL, TimeUnit.MINUTES);
-
         return Result.ok(token);//这里返回的token到客户端后,之后客户端的请求的authorization都会带有token
     }
 
